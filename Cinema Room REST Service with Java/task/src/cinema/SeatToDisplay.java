@@ -1,24 +1,17 @@
 package cinema;
 
-public class Seat {
+public class SeatToDisplay {
 
     private int row;
     private int column;
 
     private int price;
 
-    private boolean isBooked;
 
-
-    public Seat (int row, int column) {
+    public SeatToDisplay (int row, int column, int price) {
         this.row = row;
         this.column = column;
-        if (row < 5) {
-            this.price = 10;
-        } else {
-            this.price = 8;
-        }
-        this.isBooked = false;
+        this.price = price;
     }
 
     public int getRow() {
@@ -35,14 +28,6 @@ public class Seat {
 
     public void setColumn(int column) {
         this.column = column;
-    }
-
-    public boolean isBooked() {
-        return isBooked;
-    }
-
-    public void setBooked(boolean booked) {
-        isBooked = booked;
     }
 
     public int getPrice() {

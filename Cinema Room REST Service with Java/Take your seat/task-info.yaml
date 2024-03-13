@@ -362,6 +362,15 @@ files:
       
       }
     learner_created: true
+  - name: src/cinema/UserRequest.java
+    visible: true
+    learner_created: true
+  - name: src/cinema/SeatToDisplay.java
+    visible: true
+    learner_created: true
 feedback_link: https://hyperskill.org/learn/step/13376#comment
-status: Unchecked
+status: Solved
+feedback:
+  message: Congratulations!
+  time: "Tue, 12 Mar 2024 14:36:19 UTC"
 record: -1
