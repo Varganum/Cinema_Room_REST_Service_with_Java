@@ -538,6 +538,427 @@ files:
           };
       }
     learner_created: false
+  - name: src/cinema/Seat.java
+    visible: true
+    text: |-
+      package cinema;
+      
+      public class Seat {
+      
+          private int row;
+          private int column;
+      
+          private int price;
+      
+          private boolean isBooked;
+      
+          private String token;
+      
+      
+          public Seat (int row, int column) {
+              this.row = row;
+              this.column = column;
+              if (row < 5) {
+                  this.price = 10;
+              } else {
+                  this.price = 8;
+              }
+              this.isBooked = false;
+          }
+      
+          public int getRow() {
+              return row;
+          }
+      
+          public void setRow(int row) {
+              this.row = row;
+          }
+      
+          public int getColumn() {
+              return column;
+          }
+      
+          public void setColumn(int column) {
+              this.column = column;
+          }
+      
+          public boolean isBooked() {
+              return isBooked;
+          }
+      
+          public void setBooked(boolean booked) {
+              isBooked = booked;
+          }
+      
+          public int getPrice() {
+              return price;
+          }
+      
+          public void setPrice(int price) {
+              this.price = price;
+          }
+      
+          public void setToken(String token) {
+              this.token = token;
+          }
+      
+          public String getToken() {
+              return token;
+          }
+      
+          public void tokenReset() {
+              this.token = null;
+          }
+      }
+    learner_created: true
+  - name: src/cinema/TaskController.java
+    visible: true
+    text: |-
+      package cinema;
+      
+      import org.springframework.http.ResponseEntity;
+      import org.springframework.web.bind.annotation.*;
+      
+      import java.util.*;
+      
+      @RestController
+      public class TaskController {
+      
+          private final static Cinema CINEMA = new Cinema();
+      
+      
+          @GetMapping("/seats")
+          public Map<String, Object> getCinema() {
+              Map<String, Object> result = new LinkedHashMap<>();
+              result.put("rows", CINEMA.getRowsNumber());
+              result.put("columns", CINEMA.getColumnsNumber());
+              result.put("seats", CINEMA.getSeatsToDisplay());
+              //System.out.println(result);
+              return result;
+          }
+      
+          @PostMapping("/purchase")
+          public ResponseEntity<Object> purchaseSeat(@RequestBody UserPurchaseRequest purchaseRequest) {
+      
+              ResponseEntity<Object> resultResponse;
+              int row = purchaseRequest.getRow();
+              int column = purchaseRequest.getColumn();
+      
+              //check seat's row or column validness
+              if (CINEMA.isSeatValid(row, column)) {
+                  //case of valid seat's row or column
+                  Seat requestedSeat = CINEMA.findSeat(row, column);
+      
+                  if (!requestedSeat.isBooked()) {
+                      requestedSeat.setBooked(true);
+                      SeatToDisplay seatToDisplay = CINEMA.hideSeatFromDisplay(row, column);
+                      resultResponse = ResponseEntity.ok().body(getPurchasedTicketResponseBody(seatToDisplay, requestedSeat));
+                  } else {
+                      Map<String, String> errorResponse = new HashMap<>();
+                      errorResponse.put("error", "The ticket has been already purchased!");
+                      resultResponse = ResponseEntity.badRequest().body(errorResponse);
+                  }
+      
+              } else {
+                  //case of invalid seat's row or column
+                  Map<String, String> errorResponse = new HashMap<>();
+                  errorResponse.put("error", "The number of a row or a column is out of bounds!");
+                  resultResponse = ResponseEntity.badRequest().body(errorResponse);
+              }
+      
+              return resultResponse;
+          }
+      
+          @PostMapping("/return")
+          public ResponseEntity<Object> returnTicket(@RequestBody UserReturnRequest returnRequest) {
+      
+              ResponseEntity<Object> resultResponse;
+              String token = returnRequest.getToken();
+      
+              //try to find Seat by token
+              Seat seatToReturn = CINEMA.findSeat(token);
+      
+              if (Objects.nonNull(seatToReturn)) {
+                  //token found case
+                  CINEMA.returnTicket(seatToReturn);
+                  resultResponse = ResponseEntity.ok().body(getReturnedTicketResponseBody(seatToReturn));
+              } else {
+                  //token not found case
+                  Map<String, String> errorResponse = new HashMap<>();
+                  errorResponse.put("error", "Wrong token!");
+                  resultResponse = ResponseEntity.badRequest().body(errorResponse);
+              }
+      
+              return resultResponse;
+          }
+      
+          private Object getReturnedTicketResponseBody(Seat seatToReturn) {
+      
+              Map<String, Object> result = new LinkedHashMap<>();
+      
+              result.put("ticket", CINEMA.getSeatToDisplay(seatToReturn));
+      
+              return result;
+      
+          }
+      
+          private Object getPurchasedTicketResponseBody(SeatToDisplay seatToDisplay, Seat requestedSeat) {
+      
+              Map<String, Object> result = new LinkedHashMap<>();
+      
+              //generate new token
+              String token = String.valueOf(UUID.randomUUID());
+              requestedSeat.setToken(token);
+      
+              result.put("token", token);
+              result.put("ticket", seatToDisplay);
+      
+              return result;
+          }
+      
+          /* just examples
+      
+          @GetMapping("/tasks/{id}")
+          public Task getTask(@PathVariable int id) {
+              return taskList.get(id - 1); // list indices start from 0
+          }
+      
+      
+          @GetMapping("/tasks/{id}")
+          public ResponseEntity<Task> getTasks(@PathVariable int id) {
+              return new ResponseEntity<>(taskList.get(id - 1), HttpStatus.ACCEPTED);
+          }
+      
+          */
+      
+      }
+    learner_created: true
+  - name: src/cinema/UserReturnRequest.java
+    visible: true
+    text: |-
+      package cinema;
+      
+      public class UserReturnRequest {
+      
+          private String token;
+      
+          public UserReturnRequest() {}
+      
+          public UserReturnRequest(String token) {
+              this.token = token;
+          }
+      
+          public String getToken() {
+              return token;
+          }
+      
+          public void setToken(String token) {
+              this.token = token;
+          }
+      
+      }
+    learner_created: true
+  - name: src/cinema/Cinema.java
+    visible: true
+    text: |-
+      package cinema;
+      
+      import java.util.ArrayList;
+      
+      public class Cinema {
+      
+          private static final int ROWS_NUMBER = 9;
+          private static final int COLUMNS_NUMBER = 9;
+      
+          private int rowsNumber;
+          private int columnsNumber;
+      
+          private ArrayList<Seat> seats;
+          private ArrayList<SeatToDisplay> seatsToDisplay;
+          private ArrayList<SeatToDisplay> seatsBooked;
+      
+          public Cinema() {
+              rowsNumber = ROWS_NUMBER;
+              columnsNumber = COLUMNS_NUMBER;
+      
+              this.seats = new ArrayList<>();
+              this.seatsToDisplay = new ArrayList<>();
+              this.seatsBooked = new ArrayList<>();
+      
+              for (int i = 0; i < rowsNumber; i++) {
+                  for (int j = 0; j < columnsNumber; j++) {
+                      Seat newSeat = new Seat(i + 1, j + 1);
+                      seats.add(newSeat);
+                      seatsToDisplay.add(new SeatToDisplay(i + 1, j + 1, newSeat.getPrice()));
+                  }
+              }
+          }
+      
+      
+          public ArrayList<Seat> getSeats() {
+              return seats;
+          }
+      
+          public void setSeats(ArrayList<Seat> seats) {
+              this.seats = seats;
+          }
+      
+          public ArrayList<SeatToDisplay> getSeatsToDisplay() {
+              ArrayList<SeatToDisplay> result = (ArrayList<SeatToDisplay>) seatsToDisplay.clone();
+                      result.removeAll(seatsBooked);
+              return result;
+          }
+      
+          public void setSeatsToDisplay(ArrayList<SeatToDisplay> seatsToDisplay) {
+              this.seatsToDisplay = seatsToDisplay;
+          }
+      
+          public int getRowsNumber() {
+              return rowsNumber;
+          }
+      
+          public void setRowsNumber(int rowsNumber) {
+              this.rowsNumber = rowsNumber;
+          }
+      
+          public int getColumnsNumber() {
+              return columnsNumber;
+          }
+      
+          public void setColumnsNumber(int columnsNumber) {
+              this.columnsNumber = columnsNumber;
+          }
+      
+      
+          public Seat findSeat(int row, int column) {
+              return seats.get((row - 1) * ROWS_NUMBER + column - 1);
+          }
+      
+          public Seat findSeat(String token) {
+      
+              Seat result = null;
+              Seat checkedSeat;
+      
+              for (SeatToDisplay checkedBookedSeat : seatsBooked) {
+                  checkedSeat = getSeat(checkedBookedSeat);
+                  if (token.equals(checkedSeat.getToken())) {
+                      result = checkedSeat;
+                      break;
+                  }
+              }
+      
+              return result;
+          }
+      
+          public SeatToDisplay hideSeatFromDisplay(int row, int column) {
+              SeatToDisplay result = seatsToDisplay.get((row - 1) * ROWS_NUMBER + column - 1);
+              seatsBooked.add(result);
+              return result;
+          }
+      
+          private void returnSeatToDisplay(int row, int column) {
+              seatsBooked.remove(seatsToDisplay.get((row - 1) * ROWS_NUMBER + column - 1));
+          }
+      
+          public boolean isSeatValid(int row, int column) {
+              return row > 0 && column > 0 && row <= ROWS_NUMBER && column <= COLUMNS_NUMBER;
+          }
+      
+          private Seat getSeat(SeatToDisplay seatToDisplay) {
+              return findSeat(seatToDisplay.getRow(), seatToDisplay.getColumn());
+          }
+      
+          public void returnTicket(Seat seatToReturn) {
+              seatToReturn.setBooked(false);
+              seatToReturn.tokenReset();
+              returnSeatToDisplay(seatToReturn.getRow(), seatToReturn.getColumn());
+          }
+      
+      
+          public Object getSeatToDisplay(Seat seatToReturn) {
+              return seatsToDisplay.get((seatToReturn.getRow() - 1) * ROWS_NUMBER + seatToReturn.getColumn() - 1);
+          }
+      }
+    learner_created: true
+  - name: src/cinema/SeatToDisplay.java
+    visible: true
+    text: |-
+      package cinema;
+      
+      public class SeatToDisplay {
+      
+          private int row;
+          private int column;
+      
+          private int price;
+      
+      
+          public SeatToDisplay (int row, int column, int price) {
+              this.row = row;
+              this.column = column;
+              this.price = price;
+          }
+      
+          public int getRow() {
+              return row;
+          }
+      
+          public void setRow(int row) {
+              this.row = row;
+          }
+      
+          public int getColumn() {
+              return column;
+          }
+      
+          public void setColumn(int column) {
+              this.column = column;
+          }
+      
+          public int getPrice() {
+              return price;
+          }
+      
+          public void setPrice(int price) {
+              this.price = price;
+          }
+      }
+    learner_created: true
+  - name: src/cinema/UserPurchaseRequest.java
+    visible: true
+    text: |
+      package cinema;
+      
+      public class UserPurchaseRequest {
+      
+          private int row;
+          private int column;
+      
+          public UserPurchaseRequest() {}
+      
+          public UserPurchaseRequest(int row, int column) {
+              this.row = row;
+              this.column = column;
+          }
+      
+          public int getRow() {
+              return row;
+          }
+      
+          public void setRow(int row) {
+              this.row = row;
+          }
+      
+          public int getColumn() {
+              return column;
+          }
+      
+          public void setColumn(int column) {
+              this.column = column;
+          }
+      
+      }
+    learner_created: true
 feedback_link: https://hyperskill.org/learn/step/13378#comment
 status: Unchecked
 record: -1
