@@ -9,6 +9,8 @@ public class Seat {
 
     private boolean isBooked;
 
+    private String token;
+
 
     public Seat (int row, int column) {
         this.row = row;
@@ -51,5 +53,17 @@ public class Seat {
 
     public void setPrice(int price) {
         this.price = price;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void tokenReset() {
+        this.token = null;
     }
 }

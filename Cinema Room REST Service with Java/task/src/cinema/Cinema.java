@@ -71,13 +71,48 @@ public class Cinema {
         return seats.get((row - 1) * ROWS_NUMBER + column - 1);
     }
 
+    public Seat findSeat(String token) {
+
+        Seat result = null;
+        Seat checkedSeat;
+
+        for (SeatToDisplay checkedBookedSeat : seatsBooked) {
+            checkedSeat = getSeat(checkedBookedSeat);
+            if (token.equals(checkedSeat.getToken())) {
+                result = checkedSeat;
+                break;
+            }
+        }
+
+        return result;
+    }
+
     public SeatToDisplay hideSeatFromDisplay(int row, int column) {
         SeatToDisplay result = seatsToDisplay.get((row - 1) * ROWS_NUMBER + column - 1);
         seatsBooked.add(result);
         return result;
     }
 
+    private void returnSeatToDisplay(int row, int column) {
+        seatsBooked.remove(seatsToDisplay.get((row - 1) * ROWS_NUMBER + column - 1));
+    }
+
     public boolean isSeatValid(int row, int column) {
         return row > 0 && column > 0 && row <= ROWS_NUMBER && column <= COLUMNS_NUMBER;
+    }
+
+    private Seat getSeat(SeatToDisplay seatToDisplay) {
+        return findSeat(seatToDisplay.getRow(), seatToDisplay.getColumn());
+    }
+
+    public void returnTicket(Seat seatToReturn) {
+        seatToReturn.setBooked(false);
+        seatToReturn.tokenReset();
+        returnSeatToDisplay(seatToReturn.getRow(), seatToReturn.getColumn());
+    }
+
+
+    public Object getSeatToDisplay(Seat seatToReturn) {
+        return seatsToDisplay.get((seatToReturn.getRow() - 1) * ROWS_NUMBER + seatToReturn.getColumn() - 1);
     }
 }

@@ -1,13 +1,13 @@
 package cinema;
 
-public class UserRequest {
+public class UserPurchaseRequest {
 
     private int row;
     private int column;
 
-    public UserRequest() {}
+    public UserPurchaseRequest() {}
 
-    public UserRequest (int row, int column) {
+    public UserPurchaseRequest(int row, int column) {
         this.row = row;
         this.column = column;
     }
