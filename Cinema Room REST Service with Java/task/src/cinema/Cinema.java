@@ -1,8 +1,15 @@
 package cinema;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Cinema {
+
+    /*
+    Cinema is the Object describing simple Cinema with Seats.
+    Seat is an object containing full information about the seat: row, column, price and token.
+    SeatToDisplay is an object containing public information about the seat: row, column and price.
+     */
 
     private static final int ROWS_NUMBER = 9;
     private static final int COLUMNS_NUMBER = 9;
@@ -114,5 +121,24 @@ public class Cinema {
 
     public Object getSeatToDisplay(Seat seatToReturn) {
         return seatsToDisplay.get((seatToReturn.getRow() - 1) * ROWS_NUMBER + seatToReturn.getColumn() - 1);
+    }
+
+    public Object getIncome() {
+
+        int income = 0;
+
+        for (SeatToDisplay seatBooked : seatsBooked) {
+            income += seatBooked.getPrice();
+        }
+
+        return income;
+    }
+
+    public Object getAvailableSeatsNumber() {
+        return seats.size() - seatsBooked.size();
+    }
+
+    public Object getPurchasedSeatsNumber() {
+        return seatsBooked.size();
     }
 }
